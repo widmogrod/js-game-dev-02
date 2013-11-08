@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game</title>
+    <meta charset="utf-8" />
+</head>
+<body>
+
+    <canvas id="game" width="100" height="200">
+        <script>
+            var exports = f = {};
+        </script>
+        <script src="http://code.createjs.com/createjs-2013.09.25.min.js"></script>
+        <script src="./functional.js"></script>
+        <script>
+
+        var stage, state;
+
+        var BOX_SIZE = 10;
+        var ROTATION_STEP = 90;
+        var BOARD_WIDTH = 100;
+        var BOARD_HEIGHT = 100;
+        var VELOCITY = 10;
+
+        stage = new createjs.Stage("game");
+
+        createjs.Ticker.addEventListener("tick", tick);
+        createjs.Ticker.setFPS(30);
+        createjs.Ticker.useRAF = true;
+
+
+        var pipe = new createjs.Shape();
+        pipe.graphics.beginFill("#ee0039").drawRect(0,0, BOX_SIZE * 4, BOX_SIZE);
+        pipe.x = pipe.y = 0;
+        pipe.setTransform(0, 0, 1, 1, 0, 0, 0, BOX_SIZE * 2, BOX_SIZE / 2);
+        console.log(pipe);
+
+        var rectangle = new createjs.Shape();
+        rectangle.graphics.beginFill("#3C81BA").drawRect(0,0,BOX_SIZE * 2, BOX_SIZE * 2);
+        rectangle.x = rectangle.y = 0;
+        rectangle.setTransform(0, 0, 1, 1, 0, 0, 0, BOX_SIZE, BOX_SIZE);
+
+        state = {
+            currentShape: null,
+            points: 0,
+            shapes: [pipe, rectangle],
+            onFloor: [],
+            rotation: 0,
+            position: BOARD_WIDTH / 2,
+        };
+
+        function isOnFloor(shape) {
+            // console.log(shape.y);
+            // console.log(BOARD_HEIGHT);
+            var result = false;
+            if (shape.y >= BOARD_HEIGHT) {
+                result = true;
+            } else if (state.onFloor.length) {
+                // console.log(shape.y, state.onFloor);
+                f.forEach(state.onFloor, function(item){
+                    var matchX = item.x >= shape.x && item.regX <= shape.regX;
+                    var matchY = item.y - item.regY <= shape.y;
+                    if (!result && matchX && matchY) {
+                        result = true;
+                    }
+                });
+            }
+
+            if (result) {
+                state.onFloor.push(shape);
+            }
+
+            return result;
+        }
+
+        function isRowFilled(floor) {
+
+        }
+
+        function isTouchedCeiling() {
+
+        }
+
+        function startFalling(shape) {
+            stage.addChild(shape);
+            shape.addEventListener('tick', fall);
+        }
+
+        function stopFalling(shape) {
+            shape.removeEventListener('tick', fall);
+        }
+
+        function retrieveNewShape() {
+            var item, index;
+            index = (Math.round(state.shapes.length - 1 * Math.random())) - 1;
+            item = state.shapes[index].clone();
+            return state.currentObject = item;
+        }
+
+
+        function captureKeys(e) {
+            switch(e.keyCode) {
+                case 37: // left
+                    state.position -= BOX_SIZE;
+                    break;
+                case 39: // right
+                    state.position += BOX_SIZE;
+                    break;
+                case 32: // space
+                    state.rotation = state.rotation % 360 ? 0 : state.rotation += ROTATION_STEP;
+                    break;
+            }
+        }
+
+        function fall(event) {
+            var delta = event.params[0].delta;
+            var item = event.currentTarget;
+            item.y = item.y+5*delta/1000*10;
+        }
+
+        function tick(event){
+            var item = state.currentObject;
+
+            item.x = state.position;
+            item.rotation = state.rotation;
+
+            if (isOnFloor(item)) {
+                stopFalling(item);
+                startFalling(retrieveNewShape());
+            }
+
+            stage.update(event);
+        };
+
+        startFalling(retrieveNewShape());
+        document.addEventListener("keydown", captureKeys, false);
+
+        </script>
+    </canvas>
+</body>
+</html>
